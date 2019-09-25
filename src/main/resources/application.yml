@@ -1,0 +1,7 @@
+
+server:
+  port: 9090
+
+elastic:
+  host: localhost
+  port: 9200

@@ -1,0 +1,20 @@
+plugins {
+	id 'org.springframework.boot' version '2.1.7.RELEASE'
+	id 'io.spring.dependency-management' version '1.0.8.RELEASE'
+	id 'java'
+}
+
+group = 'com.eslab'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '1.8'
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	compile group: 'org.elasticsearch', name: 'elasticsearch', version: '7.0.0'
+	compile group: 'org.elasticsearch.client', name: 'elasticsearch-rest-high-level-client', version: '7.0.0'
+	compile group: 'org.projectlombok', name: 'lombok', version: '1.18.8'
+}
