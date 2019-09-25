@@ -60,7 +60,10 @@ public class StudentService {
         try {
             SearchResponse searchResponse = restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT);
             SearchHit[] hits = searchResponse.getHits().getHits();
-            return Arrays.stream(hits).map((searchHit) -> objectMapper.convertValue(searchHit.getSourceAsMap(), Student.class)).findFirst().orElseThrow(() -> new ApiException("Student not found."));
+            String docId = Arrays.stream(hits).map(SearchHit::getId).findFirst().orElse(null);
+            Student student = Arrays.stream(hits).map((searchHit) -> objectMapper.convertValue(searchHit.getSourceAsMap(), Student.class)).findFirst().orElseThrow(() -> new ApiException("Student not found."));
+            student.setId(docId);
+            return student;
         } catch (IOException e) {
             throw new ApiException("Something went wrong while searching.");
         }

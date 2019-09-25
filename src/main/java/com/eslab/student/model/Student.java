@@ -11,6 +11,7 @@ import java.util.List;
 @Setter
 public class Student implements Model {
 
+    private String id;
     private long rollNo;
     private String firstName;
     private String lastName;
