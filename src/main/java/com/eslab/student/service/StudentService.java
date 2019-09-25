@@ -40,18 +40,6 @@ public class StudentService {
         return findByRollNumber(responseId);
     }
 
-    public Student findById(String studentId) {
-        GetRequest getRequest = new GetRequest(INDEX_STUDENT).id(studentId);
-        try {
-            GetResponse getResponse = restHighLevelClient.get(getRequest, RequestOptions.DEFAULT);
-            Map<String, Object> sourceAsMap = getResponse.getSourceAsMap();
-            Student student = objectMapper.convertValue(sourceAsMap, Student.class);
-            return student;
-        } catch (IOException e) {
-            throw new ApiException("Student");
-        }
-    }
-
     public Student findByRollNumber(String rollNumber) {
         SearchRequest searchRequest = new SearchRequest();
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
@@ -69,8 +57,35 @@ public class StudentService {
         }
     }
 
+    public Student update(Student student) throws IOException {
+        findById(student.getId());
+        IndexRequest indexRequest = createIndexRequestForStudent(student);
+        IndexResponse indexResponse = restHighLevelClient.index(indexRequest, RequestOptions.DEFAULT);
+        String responseId = indexResponse.getId();
+        return findById(responseId);
+    }
+
     private IndexRequest createIndexRequestForStudent(Student student) {
         String model = esUtil.modelToJson(student);
         return new IndexRequest(INDEX_STUDENT).source(model, XContentType.JSON);
+    }
+
+    public Student findById(String studentId) {
+        GetRequest getRequest = new GetRequest(INDEX_STUDENT).id(studentId);
+        try {
+            GetResponse getResponse = restHighLevelClient.get(getRequest, RequestOptions.DEFAULT);
+            String id = getResponse.getId();
+            boolean exists = getResponse.isExists();
+            if (exists) {
+                Map<String, Object> sourceAsMap = getResponse.getSourceAsMap();
+                Student student = objectMapper.convertValue(sourceAsMap, Student.class);
+                student.setId(id);
+                return student;
+            } else {
+                throw new ApiException("Student not found with this id");
+            }
+        } catch (IOException e) {
+            throw new ApiException("Something went wrong while searching.");
+        }
     }
 }

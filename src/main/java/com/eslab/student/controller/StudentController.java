@@ -24,25 +24,23 @@ public class StudentController {
         return new ResponseEntity<>(createdStudent, HttpStatus.OK);
     }
 
-    @GetMapping("/{rollNo}")
-    public ResponseEntity<Student> findByRollNo(@PathVariable("rollNo") String rollNumber) {
-        Student student = studentService.findByRollNumber(rollNumber);
+    @GetMapping("/{id}")
+    public ResponseEntity<Student> findById(@PathVariable("id") String id) {
+        Student student = studentService.findById(id);
         return new ResponseEntity<>(student, HttpStatus.OK);
     }
 
     @GetMapping
-    public ResponseEntity<List<Student>> findAll() {
-        List<Student> students = new ArrayList<>();
-        return new ResponseEntity<>(students, HttpStatus.OK);
+    public ResponseEntity<Student> findByRollNo(@RequestParam("rollNo") String rollNumber) {
+        Student student = studentService.findByRollNumber(rollNumber);
+        return new ResponseEntity<>(student, HttpStatus.OK);
     }
 
     @PutMapping
-    public ResponseEntity<Student> update(@RequestBody Student student) {
-        return new ResponseEntity<>(null, HttpStatus.OK);
+    public ResponseEntity<Student> update(@RequestBody Student student) throws IOException {
+        Student createdStudent = studentService.update(student);
+        return new ResponseEntity<>(createdStudent, HttpStatus.OK);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Student> delete(@PathVariable("id") String id) {
-        return new ResponseEntity<>(null, HttpStatus.OK);
-    }
+
 }
