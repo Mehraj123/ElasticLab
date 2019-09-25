@@ -1,0 +1,73 @@
+package com.eslab.student.service;
+
+import com.eslab.student.exception.ApiException;
+import com.eslab.student.model.Student;
+import com.eslab.util.ESUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.AllArgsConstructor;
+import org.elasticsearch.action.get.GetRequest;
+import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.springframework.stereotype.Service;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Map;
+
+import static com.eslab.common.ESIndex.INDEX_STUDENT;
+
+@Service
+@AllArgsConstructor
+public class StudentService {
+
+    private RestHighLevelClient restHighLevelClient;
+    private ESUtil esUtil;
+    private ObjectMapper objectMapper;
+
+    public Student create(Student student) throws IOException {
+        IndexRequest indexRequest = createIndexRequestForStudent(student);
+        IndexResponse indexResponse = restHighLevelClient.index(indexRequest, RequestOptions.DEFAULT);
+        String responseId = indexResponse.getId();
+        return findByRollNumber(responseId);
+    }
+
+    public Student findById(String studentId) {
+        GetRequest getRequest = new GetRequest(INDEX_STUDENT).id(studentId);
+        try {
+            GetResponse getResponse = restHighLevelClient.get(getRequest, RequestOptions.DEFAULT);
+            Map<String, Object> sourceAsMap = getResponse.getSourceAsMap();
+            Student student = objectMapper.convertValue(sourceAsMap, Student.class);
+            return student;
+        } catch (IOException e) {
+            throw new ApiException("Student");
+        }
+    }
+
+    public Student findByRollNumber(String rollNumber) {
+        SearchRequest searchRequest = new SearchRequest();
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        searchSourceBuilder.query(QueryBuilders.matchQuery("rollNo", rollNumber));
+        searchRequest.indices(INDEX_STUDENT).source(searchSourceBuilder);
+        try {
+            SearchResponse searchResponse = restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT);
+            SearchHit[] hits = searchResponse.getHits().getHits();
+            return Arrays.stream(hits).map((searchHit) -> objectMapper.convertValue(searchHit.getSourceAsMap(), Student.class)).findFirst().orElseThrow(() -> new ApiException("Student not found."));
+        } catch (IOException e) {
+            throw new ApiException("Something went wrong while searching.");
+        }
+    }
+
+    private IndexRequest createIndexRequestForStudent(Student student) {
+        String model = esUtil.modelToJson(student);
+        return new IndexRequest(INDEX_STUDENT).source(model, XContentType.JSON);
+    }
+}
