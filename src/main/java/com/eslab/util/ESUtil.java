@@ -1,6 +1,7 @@
 package com.eslab.util;
 
 import com.eslab.common.Model;
+import com.eslab.student.exception.ApiException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
@@ -12,12 +13,10 @@ public class ESUtil {
 
     public String modelToJson(Model model) {
         ObjectMapper objectMapper = new ObjectMapper();
-        String jsonString = null;
         try {
-            jsonString = objectMapper.writeValueAsString(model);
+            return objectMapper.writeValueAsString(model);
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            throw new ApiException("Something wend wrong while parsing the json.");
         }
-        return jsonString;
     }
 }

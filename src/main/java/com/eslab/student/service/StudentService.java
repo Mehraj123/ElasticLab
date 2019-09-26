@@ -37,11 +37,15 @@ public class StudentService {
     private ESUtil esUtil;
     private ObjectMapper objectMapper;
 
-    public Student create(Student student) throws IOException {
+    public Student create(Student student) {
         IndexRequest indexRequest = createIndexRequestForStudent(student);
-        IndexResponse indexResponse = restHighLevelClient.index(indexRequest, RequestOptions.DEFAULT);
-        String responseId = indexResponse.getId();
-        return findById(responseId);
+        try {
+            IndexResponse indexResponse = restHighLevelClient.index(indexRequest, RequestOptions.DEFAULT);
+            String responseId = indexResponse.getId();
+            return findById(responseId);
+        } catch (IOException e) {
+            throw new ApiException("Something went wrong while indexing the document.");
+        }
     }
 
     public Student findByRollNumber(String rollNumber) {
@@ -61,13 +65,18 @@ public class StudentService {
         }
     }
 
-    public Student update(Student student) throws IOException {
+    public Student update(Student student) {
         Student studentById = findById(student.getId());
         String studentJson = esUtil.modelToJson(student);
         UpdateRequest updateRequest = new UpdateRequest(INDEX_STUDENT, studentById.getId()).doc(studentJson, XContentType.JSON);
-        UpdateResponse update = restHighLevelClient.update(updateRequest, RequestOptions.DEFAULT);
-        String responseId = update.getId();
-        return findById(responseId);
+        try {
+            UpdateResponse update = restHighLevelClient.update(updateRequest, RequestOptions.DEFAULT);
+            String responseId = update.getId();
+            return findById(responseId);
+        } catch (IOException e) {
+            throw new ApiException("Something went wrong while updating the document.");
+        }
+
     }
 
     private IndexRequest createIndexRequestForStudent(Student student) {
@@ -87,7 +96,7 @@ public class StudentService {
                 student.setId(id);
                 return student;
             } else {
-                throw new ApiException("Student not found with this id");
+                throw new ApiException("Student not found with this id.");
             }
         } catch (IOException e) {
             throw new ApiException("Something went wrong while searching.");
@@ -100,7 +109,7 @@ public class StudentService {
             DeleteResponse deleteResponse = restHighLevelClient.delete(deleteRequest, RequestOptions.DEFAULT);
             return deleteResponse.getResult().name();
         } catch (IOException e) {
-            throw new ApiException("Could not delete student");
+            throw new ApiException("Could not delete student.");
         }
     }
 }
