@@ -117,8 +117,4 @@ public class StudentService {
         String model = esUtil.modelToJson(student);
         return new IndexRequest(INDEX_STUDENT).source(model, XContentType.JSON);
     }
-
-    private boolean isDocumentFound(SearchResponse searchResponse) {
-        return searchResponse.getHits().getTotalHits().value != 0;
-    }
 }
