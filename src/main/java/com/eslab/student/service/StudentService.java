@@ -55,13 +55,16 @@ public class StudentService {
         searchRequest.indices(INDEX_STUDENT).source(searchSourceBuilder);
         try {
             SearchResponse searchResponse = restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT);
-            if (isDocumentFound(searchResponse)) {
-                SearchHit[] hits = searchResponse.getHits().getHits();
-                String docId = Arrays.stream(hits).map(SearchHit::getId).findFirst().orElse(null);
-                Student student = Arrays.stream(hits).map(searchHit -> objectMapper.convertValue(searchHit.getSourceAsMap(), Student.class)).findFirst().orElseThrow(() -> new ApiException("Student not found."));
-                student.setId(docId);
-                return student;
-            }
+            SearchHit[] hits = searchResponse.getHits().getHits();
+            Student student = Arrays.stream(hits)
+                    .map(searchHit -> objectMapper.convertValue(searchHit.getSourceAsMap(), Student.class))
+                    .findFirst()
+                    .orElseThrow(() -> new ApiException("Student not found."));
+            String docId = Arrays.stream(hits)
+                    .map(SearchHit::getId)
+                    .findFirst().orElse(null);
+            student.setId(docId);
+            return student;
         } catch (IOException e) {
             throw new ApiException("Something went wrong while searching.");
         }
