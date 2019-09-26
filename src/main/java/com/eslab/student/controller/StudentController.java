@@ -8,8 +8,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 @RestController
 @RequestMapping("/students")
@@ -40,6 +38,12 @@ public class StudentController {
     public ResponseEntity<Student> update(@RequestBody Student student) throws IOException {
         Student createdStudent = studentService.update(student);
         return new ResponseEntity<>(createdStudent, HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteById(@PathVariable("id") String id) {
+        String deleteById = studentService.deleteById(id);
+        return new ResponseEntity<>(deleteById, HttpStatus.OK);
     }
 
 

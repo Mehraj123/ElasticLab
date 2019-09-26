@@ -5,12 +5,16 @@ import com.eslab.student.model.Student;
 import com.eslab.util.ESUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.update.UpdateRequest;
+import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
@@ -37,7 +41,7 @@ public class StudentService {
         IndexRequest indexRequest = createIndexRequestForStudent(student);
         IndexResponse indexResponse = restHighLevelClient.index(indexRequest, RequestOptions.DEFAULT);
         String responseId = indexResponse.getId();
-        return findByRollNumber(responseId);
+        return findById(responseId);
     }
 
     public Student findByRollNumber(String rollNumber) {
@@ -58,10 +62,11 @@ public class StudentService {
     }
 
     public Student update(Student student) throws IOException {
-        findById(student.getId());
-        IndexRequest indexRequest = createIndexRequestForStudent(student);
-        IndexResponse indexResponse = restHighLevelClient.index(indexRequest, RequestOptions.DEFAULT);
-        String responseId = indexResponse.getId();
+        Student studentById = findById(student.getId());
+        String studentJson = esUtil.modelToJson(student);
+        UpdateRequest updateRequest = new UpdateRequest(INDEX_STUDENT, studentById.getId()).doc(studentJson, XContentType.JSON);
+        UpdateResponse update = restHighLevelClient.update(updateRequest, RequestOptions.DEFAULT);
+        String responseId = update.getId();
         return findById(responseId);
     }
 
@@ -86,6 +91,16 @@ public class StudentService {
             }
         } catch (IOException e) {
             throw new ApiException("Something went wrong while searching.");
+        }
+    }
+
+    public String deleteById(String studentId) {
+        DeleteRequest deleteRequest = new DeleteRequest(INDEX_STUDENT, studentId);
+        try {
+            DeleteResponse deleteResponse = restHighLevelClient.delete(deleteRequest, RequestOptions.DEFAULT);
+            return deleteResponse.getResult().name();
+        } catch (IOException e) {
+            throw new ApiException("Could not delete student");
         }
     }
 }
