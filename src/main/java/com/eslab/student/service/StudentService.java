@@ -55,11 +55,13 @@ public class StudentService {
         searchRequest.indices(INDEX_STUDENT).source(searchSourceBuilder);
         try {
             SearchResponse searchResponse = restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT);
-            SearchHit[] hits = searchResponse.getHits().getHits();
-            String docId = Arrays.stream(hits).map(SearchHit::getId).findFirst().orElse(null);
-            Student student = Arrays.stream(hits).map((searchHit) -> objectMapper.convertValue(searchHit.getSourceAsMap(), Student.class)).findFirst().orElseThrow(() -> new ApiException("Student not found."));
-            student.setId(docId);
-            return student;
+            if (isDocumentFound(searchResponse)) {
+                SearchHit[] hits = searchResponse.getHits().getHits();
+                String docId = Arrays.stream(hits).map(SearchHit::getId).findFirst().orElse(null);
+                Student student = Arrays.stream(hits).map(searchHit -> objectMapper.convertValue(searchHit.getSourceAsMap(), Student.class)).findFirst().orElseThrow(() -> new ApiException("Student not found."));
+                student.setId(docId);
+                return student;
+            }
         } catch (IOException e) {
             throw new ApiException("Something went wrong while searching.");
         }
@@ -77,11 +79,6 @@ public class StudentService {
             throw new ApiException("Something went wrong while updating the document.");
         }
 
-    }
-
-    private IndexRequest createIndexRequestForStudent(Student student) {
-        String model = esUtil.modelToJson(student);
-        return new IndexRequest(INDEX_STUDENT).source(model, XContentType.JSON);
     }
 
     public Student findById(String studentId) {
@@ -111,5 +108,14 @@ public class StudentService {
         } catch (IOException e) {
             throw new ApiException("Could not delete student.");
         }
+    }
+
+    private IndexRequest createIndexRequestForStudent(Student student) {
+        String model = esUtil.modelToJson(student);
+        return new IndexRequest(INDEX_STUDENT).source(model, XContentType.JSON);
+    }
+
+    private boolean isDocumentFound(SearchResponse searchResponse) {
+        return searchResponse.getHits().getTotalHits().value != 0;
     }
 }
